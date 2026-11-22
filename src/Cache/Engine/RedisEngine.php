@@ -98,6 +98,7 @@ class RedisEngine extends CacheEngine
         'database' => 0,
         'duration' => 3600,
         'groups' => [],
+        'username' => null,
         'password' => false,
         'persistent' => true,
         'port' => 6379,
@@ -280,7 +281,10 @@ class RedisEngine extends CacheEngine
         }
 
         if ($return && $this->_config['password']) {
-            $return = $this->_Redis->auth($this->_config['password']);
+            $credentials = $this->_config['username']
+                ? [$this->_config['username'], $this->_config['password']]
+                : [$this->_config['password']];
+            $return = $this->_Redis->auth($credentials);
         }
         if ($return) {
             return $this->_Redis->select((int)$this->_config['database']);

@@ -173,6 +173,48 @@ class RedisEngineTest extends TestCase
     }
 
     /**
+     * Test that the username and password from the DSN userinfo reach the config.
+     */
+    public function testConfigDsnWithUsername(): void
+    {
+        Cache::setConfig('redis_dsn_acl', [
+            'url' => 'redis://cake:secret@localhost:' . $this->port . '?database=1&prefix=redis_',
+        ]);
+
+        $Redis = Mockery::mock(RedisEngine::class)
+            ->makePartial();
+
+        $phpredis = Mockery::mock(Redis::class);
+
+        $phpredis->shouldReceive('connect')
+            ->once()
+            ->andReturn(true);
+
+        $phpredis->shouldReceive('auth')
+            ->once()
+            ->with(['cake', 'secret'])
+            ->andReturn(true);
+
+        $phpredis->shouldReceive('select')
+            ->once()
+            ->andReturn(true);
+
+        $Redis->shouldAllowMockingProtectedMethods();
+        $Redis->shouldReceive('_createRedisInstance')
+            ->once()
+            ->andReturn($phpredis);
+
+        $config = [
+            'port' => $this->port,
+            'persistent' => false,
+            'username' => 'cake',
+            'password' => 'secret',
+        ];
+
+        $this->assertTrue($Redis->init($config + Cache::pool('redis')->getConfig()));
+    }
+
+    /**
      * testConfigDsnSSLContext method
      */
     public function testConfigDsnSSLContext(): void
